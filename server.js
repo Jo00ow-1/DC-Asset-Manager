@@ -28,20 +28,45 @@ app.use(express.urlencoded({ extended: true }));
 
 // 라우트
 app.post("/login", (req, res) => {
+    const id = req.body.id.trim();
+    const password = req.body.password.trim();
+
     console.log("로그인 요청이 들어왔습니다.");
     console.log(req.body);
 
-    if (req.body.id === "josh" &&
-        req.body.password === "1234"
-    ) {
-        req.session.user = req.body.id;
-
-        console.log(req.session);
-
-        res.redirect("/dashboard");
-    } else {
-        res.send("로그인 실패");
+    if (!id) {
+        return res.send("아이디를 입력해주세요.");
     }
+    if (!password) {
+        return res.send("비밀번호를 입력해주세요.");
+    }
+    
+    pool.query(
+        "SELECT * FROM users WHERE username = $1",
+        [id],        
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.send("로그인 실패");
+            }
+
+            const user = result.rows[0];
+
+            if (!user) {
+                return res.send("존재하지 않는 아이디입니다.");
+            }
+
+            if (user.password !== password) {
+                return res.send("비밀번호가 일치하지 않습니다.");
+            }
+            
+            req.session.user = user.username;
+            
+            console.log(req.session);
+
+            res.redirect("/dashboard");
+        }
+    );
 });
 
 app.get("/logout", (req, res) => {
@@ -83,9 +108,22 @@ app.post("/signup", (req, res) => {
     if (password !== confirmpassword) {
         return res.send("비밀번호가 일치하지 않습니다.");
         }
-
-        res.send("회원가입 완료");
-
+    pool.query(
+        "INSERT INTO users (username, password) VALUES ($1, $2)",
+        [id, password],
+        (err, result) => {
+            if (err) {
+                console.error(err);
+                
+                if (err.code === "23505") {
+                    return res.send("이미 존재하는 아이디입니다.");
+                }
+                
+                return res.send("회원가입 실패");
+            }
+            res.send("회원가입 완료");
+        }
+    ); 
 });
 // 서버 시작
 app.listen(3000, () => {
