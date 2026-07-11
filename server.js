@@ -27,10 +27,10 @@ app.use(session({
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
 
-// 라우트
-app.post("/login", (req, res) => {
-    const id = req.body.id.trim();
-    const password = req.body.password.trim();
+// 로그인 라우트
+app.post("/login", async (req, res) => {
+    const id = req.body.id?.trim();
+    const password = req.body.password?.trim();
 
     console.log("로그인 요청이 들어왔습니다.");
     console.log(req.body);
@@ -41,33 +41,32 @@ app.post("/login", (req, res) => {
     if (!password) {
         return res.send("비밀번호를 입력해주세요.");
     }
-    
-    pool.query(
-        "SELECT * FROM users WHERE username = $1",
-        [id],        
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                return res.send("로그인 실패");
-            }
 
-            const user = result.rows[0];
+    try {
+        const result = await pool.query(
+            "SELECT * FROM users WHERE username = $1",
+            [id]
+        );
 
-            if (!user) {
-                return res.send("존재하지 않는 아이디입니다.");
-            }
+        const user = result.rows[0];
 
-            if (user.password !== password) {
-                return res.send("비밀번호가 일치하지 않습니다.");
-            }
-            
-            req.session.user = user.username;
-            
-            console.log(req.session);
-
-            res.redirect("/dashboard");
+        if (!user) {
+            return res.send("존재하지 않는 아이디입니다.");
         }
-    );
+
+        if (user.password !== password) {
+            return res.send("비밀번호가 일치하지 않습니다.");
+        }
+
+        req.session.user = user.username;
+        console.log(req.session);
+
+        res.redirect("/dashboard");
+    }
+    catch (err) {
+        console.error(err);
+        res.send("로그인 실패");
+    }
 });
 
 app.get("/logout", (req, res) => {
@@ -78,7 +77,7 @@ app.get("/logout", (req, res) => {
 
 // 대시보드 라우트
 app.get("/dashboard", (req, res) => {         // dashboard.html 파일을 클라이언트에게 전송
-    if (req.session.user) { 
+    if (req.session.user) {
         res.sendFile(__dirname + "/views/dashboard.html");
     } else {
         res.redirect("/");
@@ -90,9 +89,9 @@ app.get("/signup", (req, res) => {
     res.sendFile(__dirname + "/views/signup.html");
 })
 app.post("/signup", async (req, res) => {
-    const id = req.body.id.trim();
-    const password = req.body.password.trim();
-    const confirmpassword = req.body.confirmpassword.trim();
+    const id = req.body.id?.trim();
+    const password = req.body.password?.trim();
+    const confirmpassword = req.body.confirmpassword?.trim();
 
     console.log("회원가입 요청이 들어왔습니다.");
     console.log(req.body);
@@ -119,7 +118,7 @@ app.post("/signup", async (req, res) => {
         res.send("회원가입 완료");
     } catch (err) {
         console.error(err);
-        
+
         if (err.code === "23505") {
             return res.send("이미 존재하는 아이디입니다.");
         }
