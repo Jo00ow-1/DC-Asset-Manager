@@ -1,13 +1,14 @@
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const session = require('express-session');
 const { Pool } = require("pg");
 const pool = new Pool({
-    user: "josh.jh",
-    host: "localhost",
-    database: "dc_asset_manager",
-    password: "",
-    port: 5432,
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
 });
 
 pool.query("SELECT NOW()", (err, result) => {
@@ -88,7 +89,7 @@ app.get("/dashboard", (req, res) => {         // dashboard.html 파일을 클라
 app.get("/signup", (req, res) => {
     res.sendFile(__dirname + "/views/signup.html");
 })
-app.post("/signup", (req, res) => {
+app.post("/signup", async (req, res) => {
     const id = req.body.id.trim();
     const password = req.body.password.trim();
     const confirmpassword = req.body.confirmpassword.trim();
@@ -107,24 +108,25 @@ app.post("/signup", (req, res) => {
     }
     if (password !== confirmpassword) {
         return res.send("비밀번호가 일치하지 않습니다.");
+    }
+
+    try {
+        await pool.query(
+            "INSERT INTO users (username, password) VALUES ($1, $2)",
+            [id, password]
+        );
+
+        res.send("회원가입 완료");
+    } catch (err) {
+        console.error(err);
+        
+        if (err.code === "23505") {
+            return res.send("이미 존재하는 아이디입니다.");
         }
-    pool.query(
-        "INSERT INTO users (username, password) VALUES ($1, $2)",
-        [id, password],
-        (err, result) => {
-            if (err) {
-                console.error(err);
-                
-                if (err.code === "23505") {
-                    return res.send("이미 존재하는 아이디입니다.");
-                }
-                
-                return res.send("회원가입 실패");
-            }
-            res.send("회원가입 완료");
-        }
-    ); 
+        return res.send("회원가입 실패");
+    }
 });
+
 // 서버 시작
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
