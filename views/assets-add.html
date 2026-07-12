@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>자산 등록 - DC Asset Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <h1>자산 등록</h1>
+
+                <form action="/assets/add" method="POST">
+
+                    <div class="mb-3">
+                        <label class="form-label">카테고리</label>
+                        <select name="category" id="category" class="form-select" required>
+                            <option value="">선택하세요</option>
+                            <option value="HDD">HDD</option>
+                            <option value="SSD">SSD</option>
+                            <option value="NVMe">NVMe</option>
+                            <option value="MEMORY">MEMORY</option>
+                            <option value="NIC">NIC</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">규격 </label>
+                        <select name="spec" id="spec" class="form-select" required>
+                            <option value="">카테고리를 먼저 선택하세요</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">제조사</label>
+                        <select name="vendor" class="form-select">
+                            <option value="">선택하세요</option>
+                            <option value="Dell">Dell</option>
+                            <option value="HP">HP</option>
+                            <option value="Huawei">Huawei</option>
+                            <option value="Eslim">Eslim</option>
+                            <option value="Super">Super</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">수량</label>
+                        <input type="number" name="quantity" class="form-control" min="1" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">등록</button>
+                </form>
+            </div>
+
+            <script>
+                const specOptions = {
+                    HDD: ["8TB", "12TB", "16TB", "20TB"],
+                    MEMORY: [
+                        "2400T 16GB", "2400T 32GB", "2400T 64GB",
+                        "2666v 16GB", "2666v 32GB", "2666v 64GB",
+                        "2933Y 16GB", "2933Y 32GB", "2933Y 64GB",
+                        "3200AA 16GB", "3200AA 32GB", "3200AA 64GB"
+                    ],
+                    SSD: ["480GB", "800GB", "960GB", "1.2TB", "1.6TB", "1.9TB", "3.8TB"],
+                    NVMe: ["800GB", "960GB", "1.2TB", "1.6TB", "1.9TB", "3.2TB", "6.4TB"],
+                    NIC: [
+                        "브로드컴 롱", "브로드컴 숏", "562FLR", "562T",
+                        "561T 롱", "561T 숏", "535FLR", "530T 롱", "530T 숏",
+                        "X540 롱", "X540 숏", "X550 롱", "X550 숏",
+                        "X557", "BCM57416", "X710 롱", "X710 숏"
+                    ]
+                };
+
+                const categorySelect = document.getElementById("category");
+                const specSelect = document.getElementById("spec");
+
+                categorySelect.addEventListener("change", () => {
+                    const selectedCategory = categorySelect.value;
+                    const specs = specOptions[selectedCategory] || [];
+
+                    specSelect.innerHTML = '<option value="">선택하세요</option>';
+
+                    specs.forEach(spec => {
+                        const option = document.createElement("option");
+                        option.value = spec;
+                        option.textContent = spec;
+                        specSelect.appendChild(option);
+                    });
+                });
+            </script>
+</body>
+
+</html>
