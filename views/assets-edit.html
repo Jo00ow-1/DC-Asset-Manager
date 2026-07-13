@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자산 수정 - DC Asset Manager</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-5">
+        <h1>자산 수정</h1>
+
+        <div class="mb-3">
+            <label class="form-label">카테고리</label>
+            <input type="text" id="category" class="form-control" disabled>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">규격</label>
+            <input type="text" id="spec" class="form-control" disabled>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">제조사</label>
+            <input type="text" id="vendor" class="form-control" disabled>
+        </div>
+
+        <div class="mb-3"> <!--type="number" 스피너 생성해줌 ㅋ (화살표)-->
+            <label class="form-label">수량</label> 
+            <input type="number" id="quantity" class="form-control" min="0">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">위치</label>
+            <input type="text" id="location" class="form-control">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">상태</label>
+            <select id="status" class="form-select">
+                <option value="재고">재고</option>
+                <option value="사용중">사용중</option>
+                <option value="폐기예정">폐기예정</option>
+            </select>
+        </div>
+
+        <button id="saveBtn" class="btn btn-primary">저장</button>
+        <a href="/assets/list" class="btn btn-secondary">취소</a>
+    </div>
+
+    <script>
+        const pathParts = window.location.pathname.split("/"); // url에서 id 꺼내기 /assets/edit/3 <
+        const assetId = pathParts[pathParts.length - 1];
+        // 기존 데이터 불러와서 폼 채우기
+        fetch(`/api/assets/${assetId}`)
+            .then(res => res.json())
+            .then(asset => {
+                document.getElementById("category").value = asset.category;
+                document.getElementById("spec").value = asset.spec;
+                document.getElementById("vendor").value = asset.vendor ?? "";
+                document.getElementById("quantity").value = asset.quantity;
+                document.getElementById("location").value = asset.location ?? "";
+                document.getElementById("status").value = asset.status;
+            })
+            .catch(err => {
+                console.error(err);
+                alert("자산 정보를 불러오지 못했습니다.");
+            });
+
+        // 저장 버튼 클릭 시 수정 요청 보내기
+        document.getElementById("saveBtn").addEventListener("click", () => {
+            const updatedData = {
+                quantity: parseInt(document.getElementById("quantity").value),
+                location: document.getElementById("location").value,
+                status: document.getElementById("status").value
+            };
+
+            fetch(`/api/assets/${assetId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedData)
+            })
+                .then(res => res.json())
+                .then(result => {
+                    alert("수정이 완료되었습니다.");
+                    window.location.href = "/assets/list";
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("수정에 실패했습니다.");
+                });
+        });
+    </script>
+</body>
+
+</html>

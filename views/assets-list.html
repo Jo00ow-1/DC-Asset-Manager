@@ -21,6 +21,7 @@
                     <th>수량</th>
                     <th>상태</th>
                     <th>등록자</th>
+                    <th>관리</th>
                 </tr>
             </thead>
             <tbody id="assetTableBody">
@@ -45,6 +46,7 @@
                         <td>${asset.quantity}</td>
                         <td>${asset.status}</td>
                         <td>${asset.created_by}</td>
+                        <td><a href="/assets/edit/${asset.id}" class="btn btn-sm btn-warning">수정</a></td>
                     `;
                     tbody.appendChild(row);
                 });

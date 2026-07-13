@@ -202,6 +202,41 @@ app.get("/assets/list", (req, res) => {
     res.sendFile(__dirname + "/views/assets-list.html");
 });
 
+// 자산 edit 라우트
+app.get("/assets/edit/:id", (req, res) => {
+    if (!req.session.user) {
+        return res.redirect("/");
+    }
+    res.sendFile(__dirname + "/views/assets-edit.html");
+});
+
+// 특정 자산 단일 조회 API
+app.get ("/api/assets/:id", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다."});
+    }
+
+    const id = req.params.id;
+
+    try {
+        const result = await pool.query(
+            "SELECT * FROM assets WHERE id = $1",
+            [id]
+        );
+
+        const asset = result.rows[0];
+
+        if (!asset) {
+            return res.status(404).json({ error: "해당 자산을 찾을 수 없습니다."});
+        }
+
+        res.json(asset);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "자산 조회 실패"});
+    }
+});
+
 // 서버 시작
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
