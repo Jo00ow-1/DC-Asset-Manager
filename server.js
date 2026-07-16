@@ -29,6 +29,7 @@ app.use(session({
 }));
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // 로그인 라우트
 app.post("/login", async (req, res) => {
@@ -210,6 +211,55 @@ app.get("/assets/edit/:id", (req, res) => {
     res.sendFile(__dirname + "/views/assets-edit.html");
 });
 
+
+// 자산 검색 API
+app.get("/api/assets/search", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다."});
+    }
+
+    const keyword = req.query.keyword;
+
+    try {
+        const result = await pool.query(
+            `SELECT * FROM assets
+            WHERE category ILIKE $1
+                OR spec ILIKE $1
+                OR vendor ILIKE $1
+            ORDER BY id DESC`,
+            [`%${keyword}%`]
+        );
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "검색 실패"});
+    }
+});
+
+// 자산 수정 처리 API
+app.put("/api/assets/:id", async (req, res) => {
+    if(!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다."});
+    }
+
+    const id = req.params.id;
+    const { quantity, location, status } = req.body;
+    const updatedBy = req.session.user;
+
+    try {
+        await pool.query(
+            "UPDATE assets SET quantity = $1, location = $2, status = $3, updated_by = $4, updated_at = NOW() WHERE id = $5",
+            [quantity, location, status, updatedBy, id]
+        );
+
+        res.json({ message: "수정 완료"});
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "자산 수정 실패"});
+    }
+});
+
 // 특정 자산 단일 조회 API
 app.get ("/api/assets/:id", async (req, res) => {
     if (!req.session.user) {
@@ -234,6 +284,23 @@ app.get ("/api/assets/:id", async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "자산 조회 실패"});
+    }
+});
+
+// 자산 삭제 라우트
+app.delete("/api/assets/:id", async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ error: "로그인이 필요합니다."});
+    }
+
+    const id = req.params.id;
+
+    try {
+        await pool.query("DELETE FROM assets WHERE id = $1", [id]);
+        res.json({ message:"삭제 완료"});
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "자산 삭제 실패"});
     }
 });
 

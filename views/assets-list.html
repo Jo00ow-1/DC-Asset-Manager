@@ -1,26 +1,35 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>자산 목록 - DC Asset Manager</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
+
 <body>
     <div class="container mt-5">
         <h1>자산 목록</h1>
         <a href="/dashboard" class="btn btn-secondary mb-3">대시보드로</a>
 
+        <div class="input-group mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="카테고리, 규격, 제조사로 검색">
+            <button class="btn btn-primary" onclick="searchAssets()">검색</button>
+            <button class="btn btn-outline-secondary" onclick="loadAllAssets()">전체보기</button>
+        </div>
+
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th>ID</th>
                     <th>카테고리</th>
                     <th>스펙</th>
                     <th>벤더</th>
                     <th>수량</th>
                     <th>상태</th>
+                    <th>위치</th>
                     <th>등록자</th>
+                    <th>수정 기록</th>
                     <th>관리</th>
                 </tr>
             </thead>
@@ -31,30 +40,77 @@
     </div>
 
     <script>
-        fetch("/api/assets")
-            .then(res => res.json())
-            .then(assets => {
-                const tbody = document.getElementById("assetTableBody");
+        function renderTable(assets) {
+            const tbody = document.getElementById("assetTableBody");
+            tbody.innerHTML = "";
 
-                assets.forEach(asset => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${asset.id}</td>
+            assets.forEach(asset => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
                         <td>${asset.category}</td>
                         <td>${asset.spec}</td>
                         <td>${asset.vendor ?? "-"}</td>
                         <td>${asset.quantity}</td>
                         <td>${asset.status}</td>
+                        <td>${asset.location ?? "-"}</td>
                         <td>${asset.created_by}</td>
-                        <td><a href="/assets/edit/${asset.id}" class="btn btn-sm btn-warning">수정</a></td>
+                        <td>${asset.updated_by} (${new Date(asset.updated_at).toLocaleString()})</td>
+                        <td>
+                            <a href="/assets/edit/${asset.id}" class="btn btn-sm btn-warning">수정</a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteAsset(${asset.id})">삭제</button>
+                        </td>
                     `;
-                    tbody.appendChild(row);
-                });
-            })
-            .catch(err => {
-                console.error(err);
-                alert("자산 목록을 불러오지 못했습니다.");
+                tbody.appendChild(row);
             });
+        }
+
+        // 전체 목록 불러오기
+        function loadAllAssets() {
+            fetch("/api/assets")
+                .then(res => res.json())
+                .then(assets => renderTable(assets))
+                .catch(err => {
+                    console.error(err);
+                    alert("자산 목록을 불러오지 못했습니다.");
+                });
+        }
+
+        // 검색하기
+        function searchAssets() {
+            const keyword = document.getElementById("searchInput").value;
+
+            fetch(`/api/assets/search?keyword=${keyword}`)
+                .then(res => res.json())
+                .then(assets => renderTable(assets))
+                .catch(err => {
+                    console.error(err);
+                    alert("검색에 실패했습니다.")
+                });
+        }
+
+        // 페이지 열리면 자동으로 전체 목록 표시
+        loadAllAssets();
+
+        // 삭제 함수
+        function deleteAsset(id) {
+            if (!confirm("정말 삭제하시겠습니까?")) {
+                return;
+            }
+
+            fetch(`/api/assets/${id}`, {
+                method: "DELETE"
+            })
+                .then(res => res.json())
+                .then(result => {
+                    alert("삭제되었습니다.");
+                    location.reload();
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("삭제에 실패했습니다.");
+                });
+        }
     </script>
 </body>
+
 </html>
